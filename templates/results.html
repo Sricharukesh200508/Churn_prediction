@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex justify-center p-8">
+    <header class="header">
+        <h1 class="text-xl font-bold">Churn Dashboard (Public)</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/predict">New Prediction</a>
+        </nav>
+    </header>
+
+    <main class="mt-20">
+        <div class="card w-full max-w-4xl">
+            <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Assessment Complete</h1>
+            
+            <div id="result-container" class="mt-8 p-4 result-box">
+                <h3 class="text-2xl font-bold mb-2">Final Verdict</h3>
+                <p id="result-text" class="text-5xl font-extrabold text-center"></p> 
+                <p id="probability-text" class="text-xl text-center text-gray-600 mt-2 mb-4"></p>
+                
+                <h4 class="text-xl font-semibold text-gray-700 mt-8 mb-3 border-b pb-2">Key Factors Driving This Decision:</h4>
+                <ul id="explanation-list" class="space-y-2 explanation-list">
+                    </ul>
+            </div>
+
+            <div class="text-center mt-8">
+                <a href="/predict" class="btn-primary inline-block">Run Another Prediction</a>
+                <a href="/" class="ml-4 text-blue-600 hover:underline">Go to Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Get data from the URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const verdict = urlParams.get('v');
+        const prob = urlParams.get('p');
+        const contributionsString = urlParams.get('c');
+        
+        // --- Get Element References ---
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const probabilityText = document.getElementById('probability-text');
+        const explanationList = document.getElementById('explanation-list');
+        
+        const isHighRisk = verdict && verdict.includes('HIGH');
+
+        // 1. Update main fields and styling
+        const finalVerdictText = isHighRisk ? "CHURN YES" : "CHURN NO";
+        
+        resultText.textContent = finalVerdictText || 'N/A';
+        probabilityText.textContent = `Probability: ${prob}%` || 'Probability: N/A';
+        
+        resultContainer.classList.add(isHighRisk ? 'result-high' : 'result-low');
+        resultText.classList.add(isHighRisk ? 'text-red-700' : 'text-green-700');
+        
+        // 2. Decode and display SHAP contributions
+        if (contributionsString) {
+            try {
+                // Decode the URL component and parse the JSON array
+                const contributions = JSON.parse(decodeURIComponent(contributionsString));
+                
+                contributions.forEach(([featureName, value]) => {
+                    const li = document.createElement('li');
+                    const sign = value >= 0 ? 'Pushes TOWARDS CHURN' : 'Pushes TOWARDS STAY';
+                    const colorClass = value >= 0 ? 'positive' : 'negative';
+                    
+                    // Clean up feature names
+                    const cleanedName = featureName.replace(/^(num__|cat__)/, '').replace(/_/g, ' ');
+
+                    li.className = `${colorClass} text-sm`;
+                    li.innerHTML = `
+                        <strong class="font-semibold">${cleanedName}</strong>: 
+                        <span class="${value >= 0 ? 'text-red-700' : 'text-green-700'}">${sign}</span> 
+                        (Magnitude: ${Math.abs(value).toFixed(3)})
+                    `;
+                    explanationList.appendChild(li);
+                });
+            } catch (e) {
+                console.error("Failed to parse contributions:", e);
+                explanationList.innerHTML = '<li class="text-red-600">Error: Could not load detailed factors.</li>';
+            }
+        } else {
+            explanationList.innerHTML = '<li>No detailed factors were passed.</li>';
+        }
+    </script>
+</body>
+</html>

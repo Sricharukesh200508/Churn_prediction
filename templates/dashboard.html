@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <h1 class="text-xl font-bold">Churn Dashboard (Public)</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/predict">New Prediction</a>
+        </nav>
+    </header>
+
+    <main class="p-8">
+        <h1 class="text-3xl font-bold mb-8 text-center text-gray-800">Public Access Prediction Center</h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            <div class="card p-6 bg-blue-50">
+                <h2 class="text-xl font-semibold text-blue-800">New Prediction</h2>
+                <p class="text-gray-600 mt-2">Start a new churn assessment for a customer.</p>
+                <a href="/predict" class="btn-primary mt-4 inline-block text-center w-full">Start Prediction</a>
+            </div>
+            
+            <div class="card p-6 bg-green-50">
+                <h2 class="text-xl font-semibold text-green-800">Total Predictions</h2>
+                <p class="text-4xl font-extrabold text-green-600 mt-2">{{ history|length }}</p>
+                <p class="text-gray-600">Total records displayed.</p>
+            </div>
+            
+            <div class="card p-6 bg-red-50">
+                <h2 class="text-xl font-semibold text-red-800">High Risk Customers</h2>
+                {% set high_risk_count = history|selectattr('churn_prediction')|list|length %}
+                <p class="text-4xl font-extrabold text-red-600 mt-2">{{ high_risk_count }}</p>
+                <p class="text-gray-600">Customers recently predicted to churn.</p>
+            </div>
+        </div>
+
+        <div class="card mt-10">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Recent Prediction History</h2>
+            <div class="overflow-x-auto">
+                <table class="history-table min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Probability</th>
+                            <th>Contract</th>
+                            <th>Monthly Charges</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in history %}
+                        <tr>
+                            <td>{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="{% if record.churn_prediction %}status-high{% else %}status-low{% endif %}">
+                                {% if record.churn_prediction %}HIGH RISK{% else %}LOW RISK{% endif %}
+                            </td>
+                            <td>{{ (record.churn_probability * 100)|round(2) }}%</td>
+                            <td>{{ record.input_data.Contract }}</td>
+                            <td>${{ record.input_data.MonthlyCharges|round(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if not history %}
+                <p class="text-center text-gray-500 p-4">No prediction history yet. Run a prediction to start tracking!</p>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>
