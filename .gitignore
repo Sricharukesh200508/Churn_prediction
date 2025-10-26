@@ -1,0 +1,13 @@
+# Virtual Environment
+venv/
+.env
+
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Model Files (DO NOT COMMIT large binaries)
+model_files/
+
+# Database Files
+*.db

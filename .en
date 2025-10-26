@@ -1,0 +1,2 @@
+# NOTE: Using SQLite for simplicity.
+DATABASE_URL="sqlite:///./churn.db"

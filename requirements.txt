@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic[email]
+SQLAlchemy
+python-dotenv
+pandas
+scikit-learn
+xgboost
+joblib
+shap
